@@ -1,4 +1,4 @@
-// entry point for application
+// entry point for application - load env, connect db and start server
 
 import dotenv from "dotenv";
 import connectDB from "./src/db/index.js";
