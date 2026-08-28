@@ -26,4 +26,12 @@ app.use(express.static("public"));
 // makes cookies available in req.cookies
 app.use(cookieParser());
 
+// routes import
+import userRouter from "./routes/user.routes.js";
+
+// mount the router
+app.use("/api/v1/users", userRouter);
+// anyone who comes on /users it doesnt handle it -> gives control to userRouter
+// userRouter comes from user.routes.js -> go to user.routes.js
+
 export { app };

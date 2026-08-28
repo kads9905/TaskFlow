@@ -26,10 +26,10 @@ const userSchema = new mongoose.Schema(
             type: String, //later hash with bcrypt before saving
             required: [true, 'Passoword is required']
         },
-        avatar: {
-            type: String, //cloudinary url
-            required: true
-        },
+        // avatar: {
+        //     type: String, //cloudinary url
+        //     required: true
+        // },
         refreshToken: {
             type: String
         }
@@ -45,7 +45,6 @@ userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10);
-    next();
 });
 
 // compare passwords
