@@ -3,6 +3,32 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+// separate method for access and refresh token - call as per need
+// this is an reusable helper function 
+// to avoid repeated code
+// has one responsibility -> given a userId, generate both tokens,
+// save the refresh token, return them
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+
+        // refresh token saved in db to not ask user again for pw 
+        user.refreshToken = refreshToken;
+        // usually user.save() runs all validations again -> means mongoose checks
+        // username required, email.... but we are only updating one field
+        // i.e., refreshtoken -> running every validation is unnecessary
+        // so we save this document without re-validating every field
+        await user.save({ validateBeforeSave: false });
+        return { accessToken, refreshToken };
+    } catch (error) {
+        console.log(error);
+        throw new ApiError(500, error.message);
+    }
+}
 
 // register user
 // asynchandler -> wraps the controller
@@ -73,6 +99,71 @@ const registerUser = asyncHandler ( async (req, res) => {
     )
 })
 
+const loginUser = asyncHandler(async(req, res) => {
+    // recieve and validate credetials
+    const { email, username, password } = req.body
+    console.log(email);
+    
+    if((!email && !username) || !password) {
+        throw new ApiError(400, "Username or email and password are required")
+    }
+
+    // find user 
+    const user = await User.findOne({
+        $or: [{ email }, { username } ]
+    });
+
+    if(!user) {
+        throw new ApiError(404, "User does not exist");
+    }
+
+    // verify password
+    const isPasswordValid = await user.isPasswordCorrect(password)
+
+    if(!isPasswordValid){
+        throw new ApiError(401, "Invalid user credentials")
+    }
+
+    // generate access and refresh tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+    // fetch the updated user
+    // we now fetch the latest user and exclude sensitive fields before sending
+    // it to the frontend
+    const loggedInUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    );
+
+    // cookies
+    // we need to send them to frontend -> 2 ways
+    // json response -> frontend stores it (localstorage/sessionstorage)
+    // http-only cookie -> browser stores it automatically
+    // http is preferred cu js cannot read them making them much safer against xss attacks
+    const options = {
+        httpOnly: true,
+        secure: true
+        // secure-> only send this cookie over https
+    };
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user: loggedInUser, accessToken, refreshToken
+            },
+            "User logged In Successfully"
+        )
+    )
+
+
+})
+
+
 export {
-    registerUser
+    registerUser,
+    loginUser
 }
