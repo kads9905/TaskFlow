@@ -2,7 +2,8 @@ import { Router } from "express";
 import { 
     registerUser,
     loginUser,
-    getCurrentUser
+    getCurrentUser,
+    logoutUser
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -20,6 +21,11 @@ router.route("/login").post(
 router.route("/current-user").get(
     verifyJWT,
     getCurrentUser
+)
+
+router.route("/logout").post(
+    verifyJWT,
+    logoutUser
 )
 
 export default router;

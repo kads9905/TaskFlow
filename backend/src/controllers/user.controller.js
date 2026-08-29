@@ -173,8 +173,44 @@ const getCurrentUser = asyncHandler(async(req, res) => {
         )
     )
 })
+
+// when user logs out -> do 2 things
+// removes refresh token from db(invalidate the sesh)
+// delete cookies from browser
+const logoutUser = asyncHandler(async(req, res) => {
+
+    // remove the refresh token from database
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            // unset -> remove the field
+            $unset: {
+                refreshToken: 1
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(
+        new ApiResponse(200, {}, "User logged out successfully")
+    )
+
+})
+
 export {
     registerUser,
     loginUser,
-    getCurrentUser
+    getCurrentUser,
+    logoutUser
 }
