@@ -90,9 +90,31 @@ const updateTask = asyncHandler(async(req, res) => {
 
 })
 
+const deleteTask = asyncHandler(async(req, res) => {
+    // get the task id
+    const { taskId } = req.params
+
+    // authorizatiion + delete
+    // Instead of doing findOne() and then deleteOne(), 
+    // we can combine both into one query.
+    // delete this task only if it belongs to the logged in user
+    const task = await Task.findOneAndDelete({
+        _id: taskId,
+        owner: req.user._id
+    })
+
+    if(!task){
+        throw new ApiError(404, "Task not found")
+    }
+
+    return res
+    .status(200)
+    .json(200, {}, "Task deleted successfully")
+})
 
 export {
     createTask,
     getBoard,
-    updateTask
+    updateTask,
+    deleteTask
 }

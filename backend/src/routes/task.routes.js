@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { 
     createTask,
+    deleteTask,
     getBoard,
     updateTask
 } from "../controllers/task.controller.js";
@@ -24,6 +25,9 @@ router.route("/:taskId").patch(
     updateTask
 )
 
-
+router.route("/:taskId").delete(
+    verifyJWT,
+    deleteTask
+)
 
 export default router;
