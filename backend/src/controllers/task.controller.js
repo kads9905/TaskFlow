@@ -27,6 +27,39 @@ const createTask = asyncHandler(async(req, res) => {
     )
 })
 
+const getBoard = asyncHandler(async(req, res) => {
+
+    // task.find -> go to tasks collection and find documents of the logged in user
+    // -1 means descending, so newest tasks comes first.
+    const tasks = await Task.find({
+        owner: req.user._id
+    }).sort({ createdAt: -1 });
+
+    // group the tasks into kanban columns
+    // transform mongodb array into kanban board object
+    const board = {
+        todo: [],
+        inprogress: [],
+        done: []
+    }
+
+    tasks.forEach((task) => {
+        board[task.status].push(task);
+    })
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, board, " Board fetched successfully")
+    )
+
+})
+
+
+
+
+
 export {
-    createTask
+    createTask,
+    getBoard
 }
