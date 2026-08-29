@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const taskSchema = new mongoose.Schema(
     {
@@ -29,7 +29,7 @@ const taskSchema = new mongoose.Schema(
             type: Date
         },
         owner: {
-            type: Schema.Types.ObjectId,
+            type:Schema.Types.ObjectId,
             ref: "User",
             required: true
         }

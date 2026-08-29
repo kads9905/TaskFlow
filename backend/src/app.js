@@ -28,10 +28,11 @@ app.use(cookieParser());
 
 // routes import
 import userRouter from "./routes/user.routes.js";
+import taskRouter from "./routes/task.routes.js";
 
 // mount the router
 app.use("/api/v1/users", userRouter);
 // anyone who comes on /users it doesnt handle it -> gives control to userRouter
 // userRouter comes from user.routes.js -> go to user.routes.js
-
+app.use("/api/v1/tasks", taskRouter);
 export { app };
