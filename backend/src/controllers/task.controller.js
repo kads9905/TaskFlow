@@ -55,11 +55,44 @@ const getBoard = asyncHandler(async(req, res) => {
 
 })
 
+const updateTask = asyncHandler(async(req, res) => {
 
+    // get the task id
+    const { taskId } = req.params
 
+    // read the new values
+    const { status, title, description, priority, dueDate } = req.body
+
+    // verify the task belongs to the logged in user
+    const task = await Task.findOne({
+        _id: taskId,
+        owner: req.user._id
+    })
+
+    if(!task) {
+        throw new ApiError(404, "Task not found")
+    }
+
+    // update only the fields that were sent
+    if (title !== undefined) task.title = title;
+    if (description !== undefined) task.description = description;
+    if (status !== undefined) task.status = status;
+    if (priority !== undefined) task.priority = priority;
+    if (dueDate !== undefined) task.dueDate = dueDate;
+
+    await task.save();
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, task, "Task Updated Successfully")
+    )
+
+})
 
 
 export {
     createTask,
-    getBoard
+    getBoard,
+    updateTask
 }

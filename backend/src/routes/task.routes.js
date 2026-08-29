@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { 
     createTask,
-    getBoard
+    getBoard,
+    updateTask
 } from "../controllers/task.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -16,6 +17,11 @@ router.route("/").post(
 router.route("/").get(
     verifyJWT,
     getBoard
+)
+
+router.route("/:taskId").patch(
+    verifyJWT,
+    updateTask
 )
 
 
