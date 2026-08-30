@@ -3,6 +3,7 @@ import {
     createTask,
     deleteTask,
     getBoard,
+    getTaskStats,
     updateTask
 } from "../controllers/task.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -20,14 +21,25 @@ router.route("/").get(
     getBoard
 )
 
+// instead of calculating counts in react
+// backedn returns them directly
+// total tasks, in progress, todo, done
+router.route("/stats").get(
+    verifyJWT,
+    getTaskStats
+)
+
 router.route("/:taskId").patch(
     verifyJWT,
     updateTask
 )
 
+
 router.route("/:taskId").delete(
     verifyJWT,
     deleteTask
 )
+
+
 
 export default router;

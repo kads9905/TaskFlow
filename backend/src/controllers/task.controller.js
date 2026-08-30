@@ -27,6 +27,7 @@ const createTask = asyncHandler(async(req, res) => {
     )
 })
 
+// full kanban board(all task object)
 const getBoard = asyncHandler(async(req, res) => {
 
     // task.find -> go to tasks collection and find documents of the logged in user
@@ -112,9 +113,60 @@ const deleteTask = asyncHandler(async(req, res) => {
     .json(200, {}, "Task deleted successfully")
 })
 
+const getTaskStats = asyncHandler(async(req, res) => {
+
+    // counting documents in mongoDB
+    // earlier we used find() -> returns actual documents
+    // here we dont need the tasks-we only need the number
+    // so mongodb provides countDocuments which returns count instead of whole doc
+    // why repeat owner every time? -> this is authorization filter
+    // w/o it mongodb would count everyones todo tasks
+    // with it count only my tasks
+
+    // counts every task belonging to the user
+    const total = await Task.countDocuments({
+        owner: req.user._id
+    })
+
+    // counts task which has status todo
+    const todo = await Task.countDocuments({
+        owner: req.user._id,
+        status: "todo"
+    })
+
+    // counts task with status inprogress
+    const inprogress = await Task.countDocuments({
+        owner: req.user._id,
+        status: "inprogress"
+    })
+
+    // counts task with status done
+    const done = await Task.countDocuments({
+        owner: req.user._id,
+        status: "done"
+    })
+
+    // checks only priority
+    const highPriority = await Task.countDocuments({
+        owner: req.user._id,
+        priority: "high"
+    })
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200, { total, todo, inprogress, done, highPriority },
+            "Task statistics fetched successfully"
+        )
+    )
+})
+
+
 export {
     createTask,
     getBoard,
     updateTask,
-    deleteTask
+    deleteTask,
+    getTaskStats
 }
