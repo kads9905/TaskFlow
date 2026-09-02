@@ -26,10 +26,10 @@ const userSchema = new mongoose.Schema(
             type: String, //later hash with bcrypt before saving
             required: [true, 'Passoword is required']
         },
-        // avatar: {
-        //     type: String, //cloudinary url
-        //     required: true
-        // },
+        avatar: {
+            type: String, //cloudinary url
+            required: true
+        },
         refreshToken: {
             type: String
         }

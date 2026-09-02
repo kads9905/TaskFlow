@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 // separate method for access and refresh token - call as per need
 // this is an reusable helper function 
@@ -39,6 +40,20 @@ const registerUser = asyncHandler ( async (req, res) => {
     // destructuring simply
     const { username, fullName, email, password } = req.body;
 
+    const avatarLocalPath = req.file?.path;
+    console.log(req.file);
+    console.log(req.body);
+
+    if(!avatarLocalPath){
+        throw new ApiError(400, "Avatar image is required");
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar){
+        throw new ApiError(500, "Error uploading avatar");
+    }
+
     // validate the fields
     // suppose user sends nothing in username ["", "Kads", "k@gmail.com", "abc123"]
     // then .some() asks 
@@ -73,7 +88,7 @@ const registerUser = asyncHandler ( async (req, res) => {
         fullName,
         email,
         password,
-        // avatar
+        avatar: avatar.secure_url
     })
 
     // check if user is actually created or empty -> the data is created and
