@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { TASK_PRIORITY, TASK_STATUS } from "../constants/task.constants";
 
 const taskSchema = new mongoose.Schema(
     {
@@ -17,12 +18,12 @@ const taskSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["todo", "inprogress", "done"],
+            enum: TASK_STATUS,
             default: "todo"
         },
         priority: {
             type: String,
-            enum: ["low", "medium", "high"],
+            enum: TASK_PRIORITY,
             default: "medium"
         },
         dueDate: {
@@ -42,5 +43,11 @@ const taskSchema = new mongoose.Schema(
         timestamps: true
     }
 )
+
+taskSchema.index({
+    owner: 1,
+    status: 1,
+    order: 1,
+});
 
 export const Task = mongoose.model("Task", taskSchema);

@@ -2,10 +2,28 @@ import { Task } from "../models/task.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { TASK_PRIORITY, TASK_STATUS } from "../constants/task.constants.js";
 
 const createTask = asyncHandler(async(req, res) => {
     // extract the data
     const { title, description, priority, dueDate } = req.body
+    
+    if(!title?.trim()) {
+        throw new ApiError(400, "Task title is required");
+    }   
+
+    if(title.trim().length < 3) {
+        throw new ApiError(400, "Title must be at least 3 characters");
+    }
+
+    if(title.trim().length > 100) {
+        throw new ApiError(400, "Title cannot excedd 100 characters");
+    }
+
+    if(priority && !TASK_PRIORITY.includes(priority)) {
+        throw new ApiError(400, "Invalid task priority");
+    }
+
 
     if(!title?.trim()){
         throw new ApiError(400, "Task title is required");
@@ -70,6 +88,28 @@ const updateTask = asyncHandler(async(req, res) => {
 
     // read the new values
     const { status, title, description, priority, dueDate } = req.body
+
+    if (title !== undefined) {
+        if (!title.trim()) {
+            throw new ApiError(400, "Task title cannot be empty");
+        }
+
+        if (title.trim().length < 3) {
+            throw new ApiError(400, "Title must be at least 3 characters");
+        }
+
+        if (title.trim().length > 100) {
+            throw new ApiError(400, "Title cannot exceed 100 characters");
+        }
+    }
+
+    if (status && !TASK_STATUS.includes(status)) {
+        throw new ApiError(400, "Invalid task status");
+    }
+
+    if (priority && !TASK_PRIORITY.includes(priority)) {
+        throw new ApiError(400, "Invalid task priority");
+    }
 
     // verify the task belongs to the logged in user
     const task = await Task.findOne({
@@ -172,6 +212,14 @@ const getTaskStats = asyncHandler(async(req, res) => {
 const reorderTask = asyncHandler(async(req, res) => {
     const { taskId, status, newOrder } = req.body;
 
+    if (!TASK_STATUS.includes(status)) {
+        throw new ApiError(400, "Invalid task status");
+    }
+
+    if (!Number.isInteger(newOrder) || newOrder < 0) {
+        throw new ApiError(400, "Invalid task position");
+    }
+
     const tasks = await Task.find({
         owner: req.user._id,
         status,
@@ -215,11 +263,10 @@ const reorderTask = asyncHandler(async(req, res) => {
 const moveTask = asyncHandler(async(req, res) => {
     const { taskId, sourceStatus, destinationStatus, newOrder } = req.body;
 
-    const validStatus = ["todo", "inprogress", "done"];
     // validate and find task
     if(
-        !validStatus.includes(sourceStatus) ||
-        !validStatus.includes(destinationStatus)
+        !TASK_STATUS.includes(sourceStatus) ||
+        !TASK_STATUS.includes(destinationStatus)
     ) {
         throw new ApiError(400, "Invalid task status");
     }
@@ -245,7 +292,11 @@ const moveTask = asyncHandler(async(req, res) => {
     }).sort({ order: 1 });
 
     // Validate destination position
-    if (newOrder < 0 || newOrder > destinationTasks.length) {
+    if (
+        !Number.isInteger(newOrder) ||
+        newOrder < 0 ||
+        newOrder > destinationTasks.length
+    ) {
         throw new ApiError(400, "Invalid destination position");
     }
 
