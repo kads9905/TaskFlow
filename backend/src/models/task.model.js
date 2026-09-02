@@ -28,6 +28,10 @@ const taskSchema = new mongoose.Schema(
         dueDate: {
             type: Date
         },
+        order: {
+            type: Number,
+            default: 0
+        },
         owner: {
             type:Schema.Types.ObjectId,
             ref: "User",

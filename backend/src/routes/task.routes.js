@@ -4,7 +4,8 @@ import {
     deleteTask,
     getBoard,
     getTaskStats,
-    updateTask
+    updateTask,
+    reorderTask
 } from "../controllers/task.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -29,6 +30,11 @@ router.route("/stats").get(
     getTaskStats
 )
 
+router.route("/reorder").patch(
+    verifyJWT,
+    reorderTask
+)
+
 router.route("/:taskId").patch(
     verifyJWT,
     updateTask
@@ -39,6 +45,7 @@ router.route("/:taskId").delete(
     verifyJWT,
     deleteTask
 )
+
 
 
 

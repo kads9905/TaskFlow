@@ -11,13 +11,20 @@ const createTask = asyncHandler(async(req, res) => {
         throw new ApiError(400, "Task title is required");
     }
 
+    const lastTask = await Task.findOne({
+        owner: req.user._id,
+        status: "todo",
+    }).sort({ order: -1 });
+    
+    const newOrder = lastTask ? lastTask.order + 1 : 0;
     // create the task
     const task = await Task.create({
         title,
         description,
         priority,
         dueDate,
-        owner: req.user._id
+        owner: req.user._id,
+        order: newOrder,
     })
 
     return res
@@ -34,7 +41,7 @@ const getBoard = asyncHandler(async(req, res) => {
     // -1 means descending, so newest tasks comes first.
     const tasks = await Task.find({
         owner: req.user._id
-    }).sort({ createdAt: -1 });
+    }).sort({ status: 1, order: 1 });
 
     // group the tasks into kanban columns
     // transform mongodb array into kanban board object
@@ -162,11 +169,54 @@ const getTaskStats = asyncHandler(async(req, res) => {
     )
 })
 
+const reorderTask = asyncHandler(async(req, res) => {
+    const { taskId, status, newOrder } = req.body;
+
+    const tasks = await Task.find({
+        owner: req.user._id,
+        status,
+    }).sort({ order: 1 });
+    // sort returns the complete order of tasks in ascending order if used 1
+
+    // find the dragged task
+    const taskIndex = tasks.findIndex(
+        (task) => task._id.toString() === taskId
+    );
+
+    if(taskIndex === -1){
+        throw new ApiError(404, "Task not found");
+    }
+
+    // splice (2,1) means remove 1 elemen starting from index 2 and
+    // store the removed task in movedTask
+    const [movedTask] = tasks.splice(taskIndex, 1);
+
+    // insert at new position
+    tasks.splice(newOrder, 0, movedTask);
+
+    // renumber every task
+    for (let i = 0; i < tasks.length; i++) {
+        tasks[i].order = i;
+        await tasks[i].save({ validateBeforeSave: false });
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            tasks,
+            "Tasks reordered successfully"
+        )
+    );
+
+})
 
 export {
     createTask,
     getBoard,
     updateTask,
     deleteTask,
-    getTaskStats
+    getTaskStats,
+    reorderTask
 }
