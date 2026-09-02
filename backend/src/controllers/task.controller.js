@@ -212,11 +212,94 @@ const reorderTask = asyncHandler(async(req, res) => {
 
 })
 
+const moveTask = asyncHandler(async(req, res) => {
+    const { taskId, sourceStatus, destinationStatus, newOrder } = req.body;
+
+    const validStatus = ["todo", "inprogress", "done"];
+    // validate and find task
+    if(
+        !validStatus.includes(sourceStatus) ||
+        !validStatus.includes(destinationStatus)
+    ) {
+        throw new ApiError(400, "Invalid task status");
+    }
+    // find task only of logged in user
+    const task = await Task.findOne({
+        _id: taskId,
+        owner: req.user._id
+    });
+
+    if(!task){
+        throw new ApiError(404, "Task not found")
+    }
+
+    // fetch source and destination columns
+    const sourceTasks = await Task.find({
+        owner: req.user._id,
+        status: sourceStatus,
+    }).sort({ order: 1 });
+
+    const destinationTasks = await Task.find({
+        owner: req.user._id,
+        status: destinationStatus,
+    }).sort({ order: 1 });
+
+    // Validate destination position
+    if (newOrder < 0 || newOrder > destinationTasks.length) {
+        throw new ApiError(400, "Invalid destination position");
+    }
+
+    // find task inside source array
+    const sourceIndex = sourceTasks.findIndex(
+        (task) => task._id.toString() === taskId
+    );
+
+    if (sourceIndex === -1) {
+        throw new ApiError(404, "Task not found in source column");
+    }
+
+    // remove it
+    const [movedTask] = sourceTasks.splice(sourceIndex, 1);
+
+    // change its status
+    movedTask.status = destinationStatus;
+
+    // insert into destination
+    destinationTasks.splice(newOrder, 0, movedTask);
+
+    //renumber source column
+    for (let i = 0; i < sourceTasks.length; i++) {
+        sourceTasks[i].order = i;
+        await sourceTasks[i].save({ validateBeforeSave: false });
+    }
+
+    // renumber destination column
+    for (let i = 0; i < destinationTasks.length; i++) {
+        destinationTasks[i].order = i;
+        await destinationTasks[i].save({ validateBeforeSave: false });
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                sourceTasks, destinationTasks
+            },
+            "Task moved successfully"
+        )
+    )
+
+})
+
+
 export {
     createTask,
     getBoard,
     updateTask,
     deleteTask,
     getTaskStats,
-    reorderTask
+    reorderTask,
+    moveTask
 }
